@@ -1,11 +1,13 @@
 import torch
+import time
+import pandas as pd
 from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval
 
 class TorchTrainer:
     def __init__(self, model_factory, train_loader, 
                  valid_loader, device, coco_gt, output_dir, fold,
-                 lr=1e-4, weight_decay=1e-4, epochs=3, lr_scheduler=False, step_size=4):
+                 lr=1e-4, weight_decay=1e-4, epochs=3, lr_scheduler=False, step_size=4, max_hours=3):
         self.model = model_factory().to(device)
         self.train_loader = train_loader
         self.valid_loader = valid_loader
@@ -20,6 +22,9 @@ class TorchTrainer:
         self.lr_scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, 
                         step_size=step_size, gamma=0.1) if lr_scheduler else None
         self.fold = fold
+        self.started = None
+        self.max_hours = max_hours
+        self.time_limit_reached = False
 
     def train_epoch(self):
         self.model.train()
@@ -27,6 +32,9 @@ class TorchTrainer:
         total_loss, image_count = 0.0, 0
 
         for images, targets in self.train_loader:
+            if time.monotonic() - self.started >= self.max_hours * 3600:
+                self.time_limit_reached = True
+                break
             images = [image.to(self.device) for image in images]
 
             targets = [{"boxes": target["boxes"].to(self.device), "labels": target["labels"].to(self.device)} 
@@ -41,7 +49,7 @@ class TorchTrainer:
             image_count += len(images)
             total_loss += loss.item() * len(images)
 
-        return total_loss / image_count
+        return total_loss / image_count if image_count else 0.0
 
 
     @torch.inference_mode()
@@ -50,6 +58,10 @@ class TorchTrainer:
         predictions, image_ids = [], []
 
         for images, targets in self.valid_loader:
+            if time.monotonic() - self.started >= self.max_hours * 3600:
+                self.time_limit_reached = True
+                return None
+
             images = [image.to(self.device) for image in images]
             outputs = self.model(images)
 
@@ -85,6 +97,10 @@ class TorchTrainer:
         evaluator.params.catIds = list(range(1, 9))
         evaluator.params.maxDets = [1, 10, 100]
 
+        if time.monotonic() - self.started >= self.max_hours * 3600:
+            self.time_limit_reached = True
+            return None
+
         evaluator.evaluate()
         evaluator.accumulate()
         evaluator.summarize()
@@ -95,22 +111,43 @@ class TorchTrainer:
             "AP_small": float(evaluator.stats[3]),
         }
 
-    def save_best_model(self, epoch, metrics):
-        torch.save({"fold": self.fold, "epoch": epoch,
-                    "metrics": metrics, "model_state_dict": self.model.state_dict(), 
-                    "optimizer_state_dict": self.optimizer.state_dict()},
-                    self.output_dir / "best_model.pt")
+    def save_model(self, epoch, metrics=None, filename="last_model.pt"):
+        torch.save({
+                "fold": self.fold,
+                "epoch": epoch,
+                "time_limit_reached": self.time_limit_reached,
+                "metrics": metrics,
+                "history": self.history,
+                "model_state_dict": self.model.state_dict(),
+                "optimizer_state_dict": self.optimizer.state_dict(),
+                "scheduler_state_dict": (
+                    self.lr_scheduler.state_dict()
+                    if self.lr_scheduler is not None else None
+                ),
+            },
+            self.output_dir / filename)
 
     def fit(self):
+        self.started = time.monotonic()
         for epoch in range(1, self.epochs + 1):
+            metrics = None
+
             train_loss = self.train_epoch()
+            if self.time_limit_reached:
+                break
+
             metrics = self.validate()
+            if metrics is None:
+                break
+
             lr = self.optimizer.param_groups[0]["lr"]
             self.history.append({"epoch": epoch, "train_loss": train_loss, "learning_rate": lr, **metrics})
 
+            pd.DataFrame(self.history).to_csv(self.output_dir / "history.csv", index=False)
+
             if metrics["mAP"] > self.best_map:
                 self.best_map = metrics["mAP"]
-                self.save_best_model(epoch, metrics)
+                self.save_model(epoch, metrics, filename="best_model.pt")
 
             print(f"Epoch {epoch}/{self.epochs} | "
                             f"loss={train_loss:.4f} | "
@@ -118,7 +155,11 @@ class TorchTrainer:
                             f"mAP={metrics['mAP']:.4f} | "
                             f"AP50={metrics['AP50']:.4f} | "
                             f"AP_small={metrics['AP_small']:.4f}")
-            
 
             if self.lr_scheduler is not None:
                 self.lr_scheduler.step()
+
+        self.save_model(epoch, metrics, filename="last_model.pt")
+
+        if self.time_limit_reached:
+            print("Reached training time limit. Last model saved.")

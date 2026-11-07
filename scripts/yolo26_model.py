@@ -15,7 +15,7 @@ class YOLOTrainer:
     def __init__(self, data_yaml, output_dir, fold, valid_loader, 
                  model_factory=build_yolo_model, device=None, lr=1e-4, weight_decay=1e-4, coco_gt=None,
                  epochs=5, batch_size=8, imgsz=640, box_weight=7.5, 
-                 optimizer="Adam", class_to_category=None, seed=42):
+                 optimizer="Adam", validate_each_epoch=True, class_to_category=None, seed=42):
         self.model = model_factory()
 
         self.data_yaml = str(data_yaml)
@@ -42,6 +42,7 @@ class YOLOTrainer:
         self.best_checkpoint = None
         self.training_results = None
         self.validation_results = None
+        self.validate_each_epoch = validate_each_epoch
         self.model.add_callback("on_model_save", self._epoch_results)
 
     def save_model(self, epoch, metrics):
@@ -125,8 +126,12 @@ class YOLOTrainer:
 
     def _epoch_results(self, trainer):
         epoch = trainer.epoch + 1
-        epoch_model = YOLO(str(trainer.last))
-        metrics = self.validate(model=epoch_model)
+        metrics = {}
+
+        if self.validate_each_epoch or epoch == self.epochs:
+            epoch_model = YOLO(str(trainer.last))
+            metrics = self.validate(model=epoch_model)
+            self.validation_results = metrics
 
         train_loss = sum(float(value.detach().sum().cpu()) if torch.is_tensor(value) else float(value) for value in trainer.tloss.values())
         lr = float(trainer.optimizer.param_groups[0]["lr"])
@@ -139,11 +144,17 @@ class YOLOTrainer:
 
         pd.DataFrame(self.history).to_csv(Path(trainer.save_dir) / "history.csv", index=False)
 
-        if metrics["mAP"] >= 0 and metrics["mAP"] > self.best_map:
+        if metrics and metrics["mAP"] >= 0 and metrics["mAP"] > self.best_map:
             self.best_checkpoint = self.save_model(epoch, metrics)
             self.best_map = metrics["mAP"]
 
-        print(f"Fold {self.fold} | Epoch {epoch}/{self.epochs} | "
-              f"loss={train_loss:.4f} | learning_rate={lr:.6f} | "
-              f"mAP={metrics['mAP']:.4f} | AP50={metrics['AP50']:.4f} | "
-              f"AP_small={metrics['AP_small']:.4f}")
+        message = [f"Fold {self.fold}",
+            f"Epoch {epoch}/{self.epochs}",
+            f"loss={train_loss:.4f}",
+            f"learning_rate={lr:.6f}",
+        ]
+
+        message.extend(f"{name}={value:.4f}" for name, value in metrics.items())
+
+        print(" | ".join(message))
+        print(message)

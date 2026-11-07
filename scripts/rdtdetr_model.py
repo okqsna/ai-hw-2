@@ -31,6 +31,7 @@ class RDTDETRTrainer:
                                                               gamma=0.1) if lr_scheduler else None)
         self.max_hours = max_hours
         self.time_limit_reached = False
+        self.started = None
 
     def save_model(self, epoch, metrics=None, filename="last_model.pt", epoch_complete=True):
         torch.save({"epoch": epoch, "epoch_complete": epoch_complete,
