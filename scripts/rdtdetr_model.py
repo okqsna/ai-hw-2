@@ -77,9 +77,6 @@ class RDTDETRTrainer:
             image_count += len(targets)
             total_loss += loss.item() * len(targets)
 
-        if image_count == 0:
-            raise ValueError("Training loader is empty.")
-
         return total_loss / image_count if image_count else 0.0
 
 

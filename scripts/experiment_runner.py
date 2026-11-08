@@ -151,14 +151,12 @@ def run_yolo_cv(cv_fold_loaders, fold_yaml_paths, output_dir,
 
     return fold_histories, fold_results
 
-
 def run_rtdetr(model_method, processor, train_loader, valid_loader,
                output_dir, annotations_path, device, seed=42, epochs=5,
                lr=1e-4, weight_decay=1e-4, lr_scheduler=False,
-               step_size=4, max_hours=3, checkpoint_every_seconds=600):
-
-    output_path = Path(output_dir)
-    output_path.mkdir(parents=True, exist_ok=True)
+               step_size=4, max_hours=3):
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
     device = torch.device(device)
 
     random.seed(seed)
@@ -168,64 +166,40 @@ def run_rtdetr(model_method, processor, train_loader, valid_loader,
     if device.type == "cuda":
         torch.cuda.manual_seed_all(seed)
 
-    budget = TrainingBudget(max_hours=max_hours)
     coco_gt = COCO(str(annotations_path))
 
-    trainer = RDTDETRTrainer(
-        model_factory=model_method,
-        processor=processor,
-        train_loader=train_loader,
-        valid_loader=valid_loader,
-        device=device,
-        coco_gt=coco_gt,
-        output_dir=output_path,
-        lr=lr,
-        weight_decay=weight_decay,
-        epochs=epochs,
-        lr_scheduler=lr_scheduler,
-        step_size=step_size,
-        budget=budget,
-        checkpoint_every_seconds=checkpoint_every_seconds,
+    model = RDTDETRTrainer(model_factory=model_method, processor=processor,
+        train_loader=train_loader, valid_loader=valid_loader,
+        device=device, coco_gt=coco_gt,
+        output_dir=output_dir,
+        lr=lr, weight_decay=weight_decay,
+        epochs=epochs, lr_scheduler=lr_scheduler,
+        step_size=step_size, max_hours=max_hours
     )
 
-    trainer.model.config.save_pretrained(output_path)
-    processor.save_pretrained(output_path)
+    model.model.config.save_pretrained(output_dir)
+    processor.save_pretrained(output_dir)
 
-    trainer.fit()
+    model.fit()
 
-    history = pd.DataFrame(trainer.history)
-    scored_history = (
-        history.dropna(subset=["mAP"])
-        if not history.empty
-        else history
-    )
+    history = pd.DataFrame(model.history, columns=["epoch", "train_loss", "learning_rate", "mAP", "AP50", "AP_small"])
+    history.to_csv(output_dir / "history.csv", index=False)
 
-    results = {
-        "status": trainer.status,
-        "elapsed_seconds": budget.elapsed_seconds,
-        "best_epoch": None,
-        "best_mAP": None,
-        "last_checkpoint": str(output_path / "last_model.pt"),
-        "best_checkpoint": None,
-    }
+    result = {}
+    if not history.empty:
+        result = history.loc[history["mAP"].idxmax()].to_dict()
+        pd.DataFrame([result]).to_csv(
+            output_dir / "final_metrics.csv", index=False
+        )
+    else:
+        print("No validation completed; no best metrics available.")
 
-    if not scored_history.empty:
-        best_epoch = scored_history.loc[
-            scored_history["mAP"].idxmax()
-        ]
-        results["best_epoch"] = int(best_epoch["epoch"])
-        results["best_mAP"] = float(best_epoch["mAP"])
-
-    if (output_path / "best_model.pt").exists():
-        results["best_checkpoint"] = str(output_path / "best_model.pt")
-
-    del trainer
+    del model
     gc.collect()
-
     if device.type == "cuda":
         torch.cuda.empty_cache()
 
-    return history, results
+    return history, result
 
 def run_yolo_final(name, imgsz, box_weight, train_kwargs, output_root, seed=42):
     random.seed(seed)

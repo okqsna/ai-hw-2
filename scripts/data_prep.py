@@ -140,18 +140,6 @@ def frame_augmentation(image, boxes, horizontal=False, vertical=False,
 
     return augmented_image, augmented_boxes
 
-# def save_fold_yaml(dataset_dir, fold, class_names):
-#     dataset_dir = Path(dataset_dir).resolve()
-#     yaml_path = dataset_dir / f"fold_{fold}.yaml"
-
-#     config = {"path": str(dataset_dir), "train": f"folds/fold_{fold}_train.txt",
-#               "val": f"folds/fold_{fold}_val.txt", "names": class_names}
-#     yaml_path.parent.mkdir(parents=True, exist_ok=True)
-
-#     with yaml_path.open("w", encoding="utf-8") as file:
-#         yaml.safe_dump(config, file, allow_unicode=True, sort_keys=False)
-
-#     return yaml_path
 
 def save_fold_yaml(dataset_dir, output_dir, fold, class_names):
     dataset_dir, output_dir = Path(dataset_dir).resolve(), Path(output_dir).resolve()
