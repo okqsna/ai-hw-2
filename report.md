@@ -1,11 +1,12 @@
 ---
-title: Homework 2 -- Your Title Here
+title: Homework 2 -- Multiple Object Video Detection
 author: Oksana Moskviak
 course: Artificial Intelligence · UCU
 date: 2026-10-12
 ---
 
 ## Introduction
+In this homework, 
 
 Write your report here using regular **Markdown**. This text is an example — replace it.
 

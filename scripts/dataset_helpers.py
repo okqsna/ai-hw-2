@@ -27,12 +27,9 @@ def prepare_sample(directory, annotations_by_image, frame, empty_annotations, va
 
     coordinates = ["x_min", "y_min", "x_max", "y_max"]
 
-    target = {
-        "boxes": torch.as_tensor(objects[coordinates].to_numpy(dtype="float32")).reshape(-1, 4),
-        "labels": torch.as_tensor(objects["category_id"].to_numpy(dtype="int64")),
-        "image_id": torch.tensor(int(frame["image_id"]), dtype=torch.int64)
-    }
-
+    target = {"boxes": torch.tensor(objects[coordinates].to_numpy().tolist(), dtype=torch.float32).reshape(-1, 4),
+              "labels": torch.tensor(objects["category_id"].tolist(), dtype=torch.int64),
+              "image_id": torch.tensor(int(frame["image_id"]), dtype=torch.int64)}
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     return to_tensor(image), target
 

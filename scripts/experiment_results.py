@@ -28,23 +28,12 @@ def model_training_results(ROOT, filename, cv_folds):
     return results
 
 
-def model_training_results_yolo_cv(ROOT, filename, fold_dirs):
-    results_dir = ROOT / "outputs" / filename
-    best_results = []
-
-    for fold, folder in sorted(fold_dirs.items()):
-        history = pd.read_csv(results_dir / folder / "history.csv")
-
-        print(f"\nFold {fold}")
-        display(history)
-
-        best = history.loc[history["mAP"].idxmax()].to_dict()
-        best_results.append({"fold": fold, **best})
-
-    results = pd.DataFrame(best_results)
+def model_training_results_yolo_cv(ROOT, filename):
+    results_path = Path(ROOT) / "outputs" / filename / "fold_results.csv"
+    results = pd.read_csv(results_path).sort_values("fold").reset_index(drop=True)
     results[["fold", "epoch"]] = results[["fold", "epoch"]].astype(int)
 
-    print("\nBest results per fold")
+    print("Final validation results per fold")
     display(results)
 
     print("\nMetrics mean and std across folds")
