@@ -7,7 +7,8 @@ from torchvision.transforms.functional import to_tensor
 from .data_prep import prepare_annotations, frame_augmentation, out_ignored
 
 
-def prepare_sample(directory, annotations_by_image, frame, empty_annotations, validation=False):
+def prepare_sample(directory, annotations_by_image, frame, empty_annotations, validation=False, horizontal=True,
+                   vertical=True, contrast=False, saturation=False):
     image_path = directory / frame["split"] / frame["file_name"]
     image = cv2.imread(str(image_path))
 
@@ -17,9 +18,12 @@ def prepare_sample(directory, annotations_by_image, frame, empty_annotations, va
     annotations = annotations_by_image.get(frame["image_id"], empty_annotations).copy()
 
     if not validation:
-        image, annotations = frame_augmentation(image, annotations,
-                                                horizontal=torch.rand(()).item() < 0.5,
-                                                vertical=torch.rand(()).item() < 0.5)
+        image, annotations = frame_augmentation(image,
+            annotations, horizontal=horizontal and torch.rand(()).item() < 0.5, 
+            vertical=vertical and torch.rand(()).item() < 0.5,
+            contrast=contrast and torch.rand(()).item() < 0.5,
+            saturation=saturation and torch.rand(()).item() < 0.5)
+
     objects, ignored = prepare_annotations(annotations)
 
     if not validation:
@@ -35,12 +39,20 @@ def prepare_sample(directory, annotations_by_image, frame, empty_annotations, va
 
 
 class DetectionDataset(Dataset):
-    def __init__(self, frames, directory, annotations_by_image, empty_annotations, validation=False):
+    def __init__(self, frames, directory, annotations_by_image, empty_annotations,
+                  horizontal=True, vertical=True, contrast=False, saturation=False, validation=False):
         self.frames = frames.reset_index(drop=True)
         self.directory = Path(directory)
         self.annotations_by_image = annotations_by_image
         self.empty_annotations = empty_annotations
         self.validation = validation
+
+        self.augmentations = {
+            "horizontal": horizontal,
+            "vertical": vertical,
+            "contrast": contrast,
+            "saturation": saturation,
+        }
 
     def __len__(self):
         return len(self.frames)
@@ -50,7 +62,7 @@ class DetectionDataset(Dataset):
                               annotations_by_image=self.annotations_by_image,
                               frame=self.frames.iloc[index], 
                               empty_annotations=self.empty_annotations,
-                              validation=self.validation)
+                              validation=self.validation, **self.augmentations)
 
 def collate_data(batch):
     images, targets = zip(*batch)

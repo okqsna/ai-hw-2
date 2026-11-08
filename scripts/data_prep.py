@@ -114,29 +114,22 @@ def out_ignored(image, ignored, ignore_index=255):
     return result
 
 def frame_augmentation(image, boxes, horizontal=False, vertical=False, 
-                       brightness=False, contrast=False, saturation=False, blur=False):
+                       contrast=False, saturation=False):
     augmented_image, augmented_boxes = flip_frame(image, boxes, horizontal=horizontal, vertical=vertical)
     pixels = augmented_image.astype(np.float32)
 
     if contrast:
-        factor = np.random.uniform(0.85, 1.15)
+        factor = np.random.uniform(0.8, 1.2)
         pixels = (pixels - 127.5) * factor + 127.5
-
-    if brightness:
-        offset = np.random.uniform(-0.1, 0.1) * 255
-        pixels = pixels + offset
 
     augmented_image = np.clip(pixels, 0, 255).astype(np.uint8)
 
     if saturation:
         hsv = cv2.cvtColor(augmented_image, cv2.COLOR_BGR2HSV)
-        factor = np.random.uniform(0.9, 1.1)
+        factor = np.random.uniform(0.8, 1.2)
 
         hsv[:, :, 1] = np.clip(hsv[:, :, 1].astype(np.float32) * factor, 0, 255).astype(np.uint8)
         augmented_image = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
-
-    if blur:
-        augmented_image = cv2.GaussianBlur(augmented_image, (3, 3), sigmaX=0.5)
 
     return augmented_image, augmented_boxes
 
