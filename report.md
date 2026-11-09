@@ -6,7 +6,7 @@ date: 2026-10-12
 ---
 
 ## Introduction
-In this homework, I had to explore training Deep Learning models for multiple object video detection task on drone videos from the VisDrone2019-VID benchmark. I experimented with 4 types of Computer Vision models: Two-stage Anchor-based (Faster R-CNN ResNet-50 FPN), One-stage Anchor-based (SSD VGG-16), One-stage Anchor-free (YOLO26n) and Query-based (RT-DETR).
+In this homework, I had to explore training Deep Learning models for multiple object video detection task on drone videos from the VisDrone2019-VID benchmark. I experimented with 4 types of Computer Vision models: Two-stage Anchor-based (Faster R-CNN ResNet-50 FPN), One-stage Anchor-based (SSD300 VGG-16), One-stage Anchor-free (YOLO26n) and Query-based (RT-DETR).
 
 ## Method
 
@@ -99,7 +99,7 @@ Best results per fold:
 | 1    | 5     | 1.321903   | 0.0001        | 0.161628 | 0.331951 | 0.052332 |
 | 2    | 5     | 1.264013   | 0.0001        | 0.119536 | 0.251405 | 0.049173 |
 
-Metrics across folds:
+Metrics mean and std across folds:
 
 | Statistic | mAP      | AP50     | AP_small |
 |-----------|----------|----------|----------|
@@ -125,16 +125,84 @@ For the final model, I used a learning rate scheduler (step size - 4). Using mor
 
 The region proposal stage of the model finds areas of the image where objects might be. The second stage identifies the objects in these areas and adjusts the bounding boxes to fit them more precisely. If the first stage misses an object, the second stage cannot detect it. These can cause such failure cases as missing small objects (if for, example, applied augmentation changes reduced some visual details), oclussion of the objects' boxes or confusing of the classes of objects that look alike.
 
-###  One-stage Anchor-based - SSD VGG-16
+###  One-stage Anchor-based - SSD 300 VGG-16
+For the one-stage anchor-based experiment, I chose SSD300 VGG-16 because I wanted to see how a model with a fixed input size of 300 by 300 px would perform compared with the other models.
 
 #### Cross Validation Results
-
 #####  Baseline
+Best results per fold:
+| Fold | Epoch | Train loss | Learning rate | mAP | AP50 | AP_small |
+|---|---|---|---|---|---|---|
+| 0 | 5 | 3.898374 | 0.0001 | 0.034114 | 0.079434 | 0.005917 |
+| 1 | 5 | 3.944425 | 0.0001 | 0.048727 | 0.111486 | 0.005670 |
+| 2 | 5 | 3.943019 | 0.0001 | 0.037497 | 0.091989 | 0.006412 |
+
+Metrics mean and stad across folds:
+| Statistic | mAP | AP50 | AP_small |
+|---|---|---|---|
+| Mean | 0.040113 | 0.094303 | 0.006000 |
+| Std | 0.007650 | 0.016151 | 0.000378 |
+
+The baseline indicated pretty low results on both mAP and AP50. The results were especially low for AP Small, which means that very few small objects were detected.
+
+#####  IoU threshold
+Based on the previous low results, I wanted to test whether allowing more positive anchor matches during training would help the model learn, that is why I lowered the anchor-matching IoU threshold from 0.5 to 0.4, allowing anchors with less overlap with the ground-truth boxes to become positive training examples.
+
+Best results per fold:
+| Fold | Epoch | Train loss | Learning rate | mAP | AP50 | AP_small |
+|---|---|---|---|---|---|---|
+| 0 | 4 | 3.599671 | 0.0001 | 0.041017 | 0.094176 | 0.005443 |
+| 1 | 5 | 3.436188 | 0.0001 | 0.060336 | 0.136415 | 0.005699 |
+| 2 | 5 | 3.459713 | 0.0001 | 0.037774 | 0.097184 | 0.006105 |
+
+Metrics mean and std across folds:
+| Statistic | mAP | AP50 | AP_small |
+|---|---|---|---|
+| Mean | 0.046375 | 0.109258 | 0.005749 |
+| Std | 0.012198 | 0.023566 | 0.000334 |
+
+This experiment have bettered mAP and AP50 metrics, but as expected slightly lowered detection of the small objects, because of 
+the tolerance to IoU. 
+
+##### Positive fraction
+For this experiment, I increased the positive fraction from 0.25 to 0.5 to test if giving object examples more weight relative to background examples would improve detection. 
+
+Best results per fold:
+| Fold | Epoch | Train loss | Learning rate | mAP | AP50 | AP_small |
+|---|---|---|---|---|---|---|
+| 0 | 4 | 3.491223 | 0.0001 | 0.030561 | 0.060355 | 0.002595 |
+| 1 | 5 | 3.348580 | 0.0001 | 0.040778 | 0.083547 | 0.003209 |
+| 2 | 5 | 3.364603 | 0.0001 | 0.026028 | 0.059766 | 0.003566 |
+
+Metrics mean and std across folds:
+| Statistic | mAP | AP50 | AP_small |
+|---|---|---|---|
+| Mean | 0.032456 | 0.067889 | 0.003123 |
+| Std | 0.007555 | 0.013563 | 0.000491 |
+
+This experiment has lowered all of the metrics. The possible reason for this is that fewer negative examples weakened the model’s ability to distinguish objects from background.
 
 #### Results
+| Epoch | Train loss | Learning rate | mAP | AP50 | AP_small |
+|---|---|---|---|---|---|
+| 1 | 4.626553 | 0.0001 | 0.050752 | 0.118280 | 0.007082 |
+| 2 | 3.497785 | 0.0001 | 0.060435 | 0.137710 | 0.006624 |
+| 3 | 3.097881 | 0.0001 | 0.053735 | 0.128880 | 0.007204 |
+| 4 | 2.830493 | 0.0001 | 0.054024 | 0.129214 | 0.005797 |
+| 5 | 2.641353 | 0.0001 | 0.059821 | 0.139782 | 0.009018 |
+| 6 | 2.499708 | 0.0001 | 0.061381 | 0.144902 | 0.010724 |
+| 7 | 2.379168 | 0.0001 | 0.061150 | 0.146110 | 0.006248 |
+| 8 | 2.283222 | 0.0001 | 0.055711 | 0.131893 | 0.008913 |
+
+For the final model, I have chosen IoU threshold setting. The overall result on more data and with using validation dataset has shown a little bit better results (with mean mAP - 0.061381, AP50 - 0.144902 and AP Small - 0.010724) than the cross-validation ones, but significantly lower than two-stage anchor-based. One possible reason for this can be the fixed input size, which can make small objects harder to distinguish. Removing the proposal stage may also contribute to this, as SSD predicts classes and bounding boxes directly from anchors, without a separate stage that extracts features from candidate regions and further refines their predictions. This can make small or distorted objects harder to detect. Potential improvements to these problems can be a larger input resolution and adapting anchor sizes to the object sizes observed in the dataset. 
 
 ###  One-stage Anchor-free - YOLO26n
+ 
 #### Cross Validation Results
+
+##### 
+
+
 #### Results
 
 ### Query-based - RT-DETR
