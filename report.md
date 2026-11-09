@@ -125,13 +125,26 @@ For the final model, I used a learning rate scheduler (step size - 4). Using mor
 
 The region proposal stage of the model finds areas of the image where objects might be. The second stage identifies the objects in these areas and adjusts the bounding boxes to fit them more precisely. If the first stage misses an object, the second stage cannot detect it. These can cause such failure cases as missing small objects (if for, example, applied augmentation changes reduced some visual details), oclussion of the objects' boxes or confusing of the classes of objects that look alike.
 
-###  Two-stage Anchor-based model - Faster R-CNN ResNet-50 FPN
+###  One-stage Anchor-based - SSD VGG-16
 
 #### Cross Validation Results
 
 #####  Baseline
-##### 
 
+#### Results
+
+###  One-stage Anchor-free - YOLO26n
+#### Cross Validation Results
+#### Results
+
+### Query-based - RT-DETR
+
+#### Cross Validation Results
+#### Results
+
+### Pipeline
+
+#### Cross Validation Results
 #### Results
 
 ## Conclusion
