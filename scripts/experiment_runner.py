@@ -154,7 +154,7 @@ def run_yolo_cv(cv_fold_loaders, fold_yaml_paths, output_dir,
 def run_rtdetr(model_method, processor, train_loader, valid_loader,
                output_dir, annotations_path, device, seed=42, epochs=5,
                lr=1e-4, weight_decay=1e-4, lr_scheduler=False,
-               step_size=4, max_hours=3):
+               step_size=4, max_hours=3, resume_training_model=None):
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     device = torch.device(device)
@@ -176,6 +176,9 @@ def run_rtdetr(model_method, processor, train_loader, valid_loader,
         epochs=epochs, lr_scheduler=lr_scheduler,
         step_size=step_size, max_hours=max_hours
     )
+
+    if resume_training_model:
+        model.load_model(resume_training_model)
 
     model.model.config.save_pretrained(output_dir)
     processor.save_pretrained(output_dir)

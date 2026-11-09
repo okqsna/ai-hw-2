@@ -26,7 +26,6 @@ class RDTDETRTrainer:
         self.history = []
         self.best_map = -float("inf")
         self.epochs = epochs
-
         self.lr_scheduler = (torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=step_size,
                                                               gamma=0.1) if lr_scheduler else None)
         self.max_hours = max_hours
@@ -45,6 +44,26 @@ class RDTDETRTrainer:
                 else None
             ),
         }, self.output_dir / filename)
+
+    def load_model(self, filename):
+        checkpoint = torch.load(filename, map_location="cpu", weights_only=True)
+
+        self.model.load_state_dict(checkpoint["model_state_dict"])
+        self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+
+        if self.lr_scheduler is not None:
+            scheduler_state = checkpoint.get("scheduler_state_dict")
+
+            self.lr_scheduler.load_state_dict(scheduler_state)
+            self.lr_scheduler.step()
+
+        self.history = []
+        self.best_map = -float("inf")
+        self.time_limit_reached = False
+
+        print("Loaded checkpoint epoch:", checkpoint["epoch"])
+        print("Previous validation metrics:", checkpoint["metrics"])
+        print("Current learning rate:", self.optimizer.param_groups[0]["lr"])
 
 
     def train_epoch(self):
