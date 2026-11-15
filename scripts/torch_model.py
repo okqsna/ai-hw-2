@@ -56,6 +56,7 @@ class TorchTrainer:
     def validate(self):
         self.model.eval()
         predictions, image_ids = [], []
+        inference_time, image_count = 0.0, 0
 
         for images, targets in self.valid_loader:
             if time.monotonic() - self.started >= self.max_hours * 3600:
@@ -63,7 +64,18 @@ class TorchTrainer:
                 return None
 
             images = [image.to(self.device) for image in images]
+
+            if self.device.type == "cuda":
+                torch.cuda.synchronize(self.device)
+
+            start = time.perf_counter()
             outputs = self.model(images)
+
+            if self.device.type == "cuda":
+                torch.cuda.synchronize(self.device)
+
+            inference_time += time.perf_counter() - start
+            image_count += len(images)
 
             for target, output in zip(targets, outputs):
                 image_id = int(target["image_id"].item())
@@ -91,6 +103,9 @@ class TorchTrainer:
                                         "categories": self.coco_gt.dataset["categories"],
                                         "annotations": []}
             coco_predictions.createIndex()
+
+        if image_count:
+            print(f"Inference time: {inference_time:.2f} s")
 
         evaluator = COCOeval(self.coco_gt, coco_predictions, iouType="bbox")
         evaluator.params.imgIds = image_ids

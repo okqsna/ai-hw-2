@@ -118,11 +118,7 @@ class YOLOTrainer:
         evaluator.accumulate()
         evaluator.summarize()
 
-        return {
-            "mAP": float(evaluator.stats[0]),
-            "AP50": float(evaluator.stats[1]),
-            "AP_small": float(evaluator.stats[3])
-        }
+        return {"mAP": float(evaluator.stats[0]), "AP50": float(evaluator.stats[1]), "AP_small": float(evaluator.stats[3])}
 
     def _epoch_results(self, trainer):
         epoch = trainer.epoch + 1
