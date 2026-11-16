@@ -4,7 +4,12 @@ from pathlib import Path
 
 def model_training_results(ROOT, filename, cv_folds):
     """
-    Function provides the results for model training
+    Function displays training histories, best results per fold, and summary metrics.
+
+    :param ROOT: project root directory
+    :param filename: name of the experiment folder inside outputs
+    :param cv_folds: number of cv folds
+    :return: the saved results for all folds
     """
     results_dir = ROOT / "outputs" / filename
     histories = {}
@@ -27,8 +32,14 @@ def model_training_results(ROOT, filename, cv_folds):
 
     return results
 
-
 def model_training_results_yolo_cv(ROOT, filename):
+    """
+    Function displays saved YOLO validation results and summary metrics across folds.
+
+    :param ROOT: project root directory
+    :param filename: name of the experiment folder inside outputs
+    :return: the saved results for all folds
+    """
     results_path = Path(ROOT) / "outputs" / filename / "fold_results.csv"
     results = pd.read_csv(results_path).sort_values("fold").reset_index(drop=True)
     results[["fold", "epoch"]] = results[["fold", "epoch"]].astype(int)
@@ -42,6 +53,12 @@ def model_training_results_yolo_cv(ROOT, filename):
     return results
 
 def model_training_results_final(run_dir):
+    """
+    Function displays training history and separetely validation metrics for the epoch with highest mAP.
+
+    :param run_dir: directory containing history of training and validation results
+    :return: results for the best epoch
+    """
     run_dir = Path(run_dir)
     history = pd.read_csv(run_dir / "history.csv")
 
