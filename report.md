@@ -2,7 +2,7 @@
 title: Homework 2 -- Multiple Object Video Detection
 author: Oksana Moskviak
 course: Artificial Intelligence · UCU
-date: 2026-10-12
+date: 2026-11-16
 ---
 
 ## Introduction
