@@ -48,7 +48,7 @@ IoU - Intersection over Union - metric, which measures how much a predicted boun
 ##  Two-stage Anchor-based model - Faster R-CNN ResNet-50 FPN
 For the two-stage anchor-based model, I chose Faster R-CNN ResNet-50 FPN because it is a widely used model that performs well on object detection tasks.
 
-### Cross Validation Results
+### Cross-Validation Results
 ### Baseline
 
 Best results per fold:
@@ -129,7 +129,7 @@ These can cause such failure cases as missing small objects (if for, example, ap
 ##  One-stage Anchor-based - SSD 300 VGG-16
 For the one-stage anchor-based experiment, I chose SSD300 VGG-16 because I wanted to see how a model with a fixed input size of 300 by 300 px would perform compared with the other models.
 
-### Cross Validation Results
+### Cross-Validation Results
 ###  Baseline
 Best results per fold:
 
@@ -210,7 +210,7 @@ For this method, I chose YOLO26n model because it is lightweight architecture ma
 to experiment with different settings, it is also known for good object detection task performance, 
 especially on smaller objects, which is particularly interesting to observe (compared to the previous experiments with bad performance for them).
 
-### Cross Validation Results
+### Cross-Validation Results
 ### Baseline
 Best results per fold:
 
