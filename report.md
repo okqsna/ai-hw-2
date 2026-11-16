@@ -48,8 +48,8 @@ IoU - Intersection over Union - metric, which measures how much a predicted boun
 ##  Two-stage Anchor-based model - Faster R-CNN ResNet-50 FPN
 For the two-stage anchor-based model, I chose Faster R-CNN ResNet-50 FPN because it is a widely used model that performs well on object detection tasks.
 
-#### Cross Validation Results
-##### Baseline
+### Cross Validation Results
+### Baseline
 
 Best results per fold:
 
@@ -68,7 +68,7 @@ Metrics across folds:
 
 The baseline results achieved a mean mAP of approximately 0.1435 across 3 folds, the variation between folds was not significant. AP small metric's mean is only 0.051774, which indicates that detecting small objects was challenging for the model.
 
-##### Learning rate scheduler
+### Learning rate scheduler
  For hyperparameter tuning, I decided to use a learning rate scheduler with a step size of 4, reducing the baseline learning rate from starting 1e-4 to 1e-5 after 4 epochs. This was an experiment to see how smaller updates later in training can influence the model performance.
 
 Best results per fold:
@@ -88,7 +88,7 @@ Metrics across folds:
 
 The mean mAP improved from 0.143537 to 0.162669 and AP50 and AP small also increased.
 
-##### ROI positive fraction
+### ROI positive fraction
 For another experiment, I decided to increase the number of positive fractions of the regions, which Faster R-CNN choose for training, which sufficiently overlap with real objects. I wanted to see whether using more positive examples relative to background regions can better model performance.
 
 Best results per fold:
@@ -108,7 +108,7 @@ Metrics mean and std across folds:
 
 Compared to the learning rate scheduler experiment, the mean values of all three metrics decreased. Compared to the baseline, mean AP50 and AP small were slightly higher, but mean mAP was slightly lower.
 
-#### Results
+### Results
 
 | epoch | train_loss | learning_rate | mAP      | AP50     | AP_small |
 |-------|------------|---------------|----------|----------|----------|
@@ -129,8 +129,8 @@ These can cause such failure cases as missing small objects (if for, example, ap
 ##  One-stage Anchor-based - SSD 300 VGG-16
 For the one-stage anchor-based experiment, I chose SSD300 VGG-16 because I wanted to see how a model with a fixed input size of 300 by 300 px would perform compared with the other models.
 
-#### Cross Validation Results
-#####  Baseline
+### Cross Validation Results
+###  Baseline
 Best results per fold:
 
 | Fold | Epoch | Train loss | Learning rate | mAP | AP50 | AP_small |
@@ -148,7 +148,7 @@ Metrics mean and std across folds:
 
 The baseline indicated pretty low results on both mAP and AP50. The results were especially low for AP Small, which means that very few small objects were detected.
 
-#####  IoU threshold
+###  IoU threshold
 Based on the previous low results, I wanted to test whether allowing more positive anchor matches during training would help the model learn, that is why I lowered the anchor-matching IoU threshold from 0.5 to 0.4, allowing anchors with less overlap with the ground-truth boxes to become positive training examples.
 
 Best results per fold:
@@ -169,7 +169,7 @@ Metrics mean and std across folds:
 This experiment have bettered mAP and AP50 metrics, but as expected slightly lowered detection of the small objects, because of 
 the tolerance to IoU. 
 
-##### Positive fraction
+### Positive fraction
 For this experiment, I increased the positive fraction from 0.25 to 0.5 to test if giving object examples more weight relative to background examples would improve detection. 
 
 Best results per fold:
@@ -189,7 +189,7 @@ Metrics mean and std across folds:
 
 This experiment has lowered all of the metrics. The possible reason for this is that fewer negative examples weakened the model’s ability to distinguish objects from background.
 
-#### Results
+### Results
 | Epoch | Train loss | Learning rate | mAP | AP50 | AP_small |
 |---|---|---|---|---|---|
 | 1 | 4.626553 | 0.0001 | 0.050752 | 0.118280 | 0.007082 |
@@ -210,8 +210,8 @@ For this method, I chose YOLO26n model because it is lightweight architecture ma
 to experiment with different settings, it is also known for good object detection task performance, 
 especially on smaller objects, which is particularly interesting to observe (compared to the previous experiments with bad performance for them).
 
-#### Cross Validation Results
-##### Baseline
+### Cross Validation Results
+### Baseline
 Best results per fold:
 
 | Fold | Epoch | Train loss | Learning rate | mAP | AP50 | AP_small |
@@ -232,7 +232,7 @@ The reason for such results can also be the size of the frame on which training 
 640 by 640 px. This size as was spotted from the previous model experiment losses information
 about objects (despite the fact that model is still better for smaller objects).
 
-##### Image size
+### Image size
 For the first experiment, I tried to fix the baseline problem of small frame size.
 
 Best results per fold:
@@ -253,7 +253,7 @@ Metrics mean and stad across folds:
 As a result, this experiment greatly increased the model performance - from mAP being approximately 0.07
 to 0.11 and also increasing AP small.
 
-##### Image size and box-weight
+### Image size and box-weight
 For another experiment, I kept the larger image size and increased the box loss weight to test whether
 giving more importance to bounding box accuracy would improve detection.
 
@@ -275,7 +275,7 @@ Metrics mean and std across folds:
 This experiment showed small mAP and AP increasing (AP50 decreased slightly).
 This change provided little additional improvement.
 
-#### Results
+### Results
 
 | Epoch | Train loss | Learning rate | mAP | AP50 | AP_small |
 |---|---|---|---|---|---|
@@ -367,7 +367,7 @@ because it provided the best results previously. I changed the data augmentation
 settings. The training settings were also changed - 5 hours for 8 epochs for 2 experiments and 7 hours and 12 epochs for the last one, each third (fourth for the last one) frame was taken from training dataset, 
 150 queries for first 2 experiments and 200 for last one.
 
-####  Data Augmentation
+###  Data Augmentation
 ##### Results
 | Epoch | Train loss | Learning rate | mAP | AP50 | AP_small |
 |------|-----------|--------------|----|-----|---------|
@@ -380,7 +380,7 @@ settings. The training settings were also changed - 5 hours for 8 epochs for 2 e
 In this experiment, I applied the new data augmentation settings, which resulted in lower mAP(0.189632), but better AP small metric (0.089789).
 However, the training budget was also too low to complete all the epochs with the increased amount of data.
 
-#### Increased queries number
+### Increased queries number
 ##### Results
 | Epoch | Train loss | Learning rate | mAP | AP50 | AP_small |
 |------|-----------|--------------|----|-----|---------|
@@ -393,7 +393,7 @@ However, the training budget was also too low to complete all the epochs with th
 For another settings search, I decided to increase the number of queries to 200 (this number was chosen from the plot of number of bounding boxes on frames). 
 This setting actually bettered the model performance. 5 epochs were runed out of 8, 
 
-#### Increased queries number, budget and number of frames
+### Increased queries number, budget and number of frames
 ##### Results
 
 | Epoch | Train loss | Learning rate | mAP | AP50 | AP_small |
