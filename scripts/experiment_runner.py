@@ -9,7 +9,7 @@ from pycocotools.coco import COCO
 from .data_prep import load_yaml
 from .yolo26_model import YOLOTrainer
 from .torch_model import TorchTrainer
-from .rdtdetr_model import RDTDETRTrainer
+from .rtdetr_model import RTDETRTrainer
 from ultralytics import YOLO
 
 def run_torch_cv(cv_fold_loaders, model_method, output_dir, annotations_path, device, seed=42, epochs=5,
@@ -168,7 +168,7 @@ def run_rtdetr(model_method, processor, train_loader, valid_loader,
 
     coco_gt = COCO(str(annotations_path))
 
-    model = RDTDETRTrainer(model_factory=model_method, processor=processor,
+    model = RTDETRTrainer(model_factory=model_method, processor=processor,
         train_loader=train_loader, valid_loader=valid_loader,
         device=device, coco_gt=coco_gt,
         output_dir=output_dir,

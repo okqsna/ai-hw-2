@@ -4,7 +4,7 @@ from pycocotools.cocoeval import COCOeval
 import time
 import pandas as pd
 
-class RDTDETRTrainer:
+class RTDETRTrainer:
     def __init__(self, model_factory, processor, train_loader, valid_loader,
                  device, coco_gt, output_dir, lr=1e-4,
                  weight_decay=1e-4, epochs=3, lr_scheduler=False, step_size=4, max_hours=3):
