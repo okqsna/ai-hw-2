@@ -834,8 +834,10 @@ This setting actually bettered the model performance. 5 epochs were runed out of
 Best validation results — epoch 6:
 
 | Epoch | mAP | AP50 | AP_small |
-|------:|----:|-----:|---------:|
+|------|----|-----:|---------|
 | 6 | 0.257927 | 0.463701 | 0.081673 |
+
+
 In this experiment, I increased the number of queries, the training budget and the number of training frames. 
 This combination achieved the highest mAP of 0.257927 and AP50 of 0.463701, with AP small of 0.081673. 
 The larger budget allowed all epochs to finish, although validation mAP did not improve after epoch 6.
