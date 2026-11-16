@@ -5,10 +5,6 @@ import time
 import pandas as pd
 
 class RTDETRTrainer:
-    """
-    Helper class to train and validate RT-DETR model using COCO metrics,
-    records training history, manages checkpoints, and limits training time.
-    """
     def __init__(self, model_factory, processor, train_loader, valid_loader,
                  device, coco_gt, output_dir, lr=1e-4,
                  weight_decay=1e-4, epochs=3, lr_scheduler=False, step_size=4, max_hours=3):
@@ -37,14 +33,6 @@ class RTDETRTrainer:
         self.started = None
 
     def save_model(self, epoch, metrics=None, filename="last_model.pt", epoch_complete=True):
-        """
-        Function saves model, optimizer, scheduler, and training information.
-
-        :param epoch: current epoch number
-        :param metrics: validation metrics or None if validation did not finish
-        :param filename: checkpoint filename inside the output directory
-        :param epoch_complete: state of training and validation finished for the epoch
-        """
         torch.save({"epoch": epoch, "epoch_complete": epoch_complete,
             "time_limit_reached": self.time_limit_reached,
             "metrics": metrics, "history": self.history,
@@ -54,17 +42,20 @@ class RTDETRTrainer:
                 self.lr_scheduler.state_dict()
                 if self.lr_scheduler is not None
                 else None
-            )}, self.output_dir / filename)
+            ),
+        }, self.output_dir / filename)
 
     def load_model(self, filename):
         checkpoint = torch.load(filename, map_location="cpu", weights_only=True)
 
         self.model.load_state_dict(checkpoint["model_state_dict"])
         self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
-        scheduler_state = checkpoint.get("scheduler_state_dict")
 
-        if self.lr_scheduler is not None and scheduler_state is not None:
+        if self.lr_scheduler is not None:
+            scheduler_state = checkpoint.get("scheduler_state_dict")
+
             self.lr_scheduler.load_state_dict(scheduler_state)
+            self.lr_scheduler.step()
 
         self.history = []
         self.best_map = -float("inf")
